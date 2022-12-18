@@ -1,49 +1,50 @@
 # The serializer class prepares the json for the responses based on the customer model
 from rest_framework import serializers
-
+from developer.serializers import *
 from .models import *
 
 # the serializers for the customer models
-class Customer_Profile_Serializer(serializers.HyperlinkedModelSerializer):
+class Product_Requirements_Serializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = Customer_Profile
-        fields = ('customer_name', 'customer_email', 'customer_telephone', 'customer_type', 'customer_status', 
-        'customer_address', 'city', 'url', 'registration_number', 'postal_code', 'created_on')
+        model = Product_Requirements
+        fields = '__all__'
 
-class User_Serializer(serializers.ModelSerializer):    
+class Customer_Product_Serializer(serializers.HyperlinkedModelSerializer):
+    product_requirements = Product_Requirements_Serializer(many=True, read_only=True)
+    product_feedbacks = Feedback_Serializer(many=True, read_only=True)
+    product_projects = Project_Serializer(many=True, read_only=True)
+
     class Meta:
-        model = User
-        fields = ('email',)
+        model = Customer_Product
+        fields = '__all__'
 
-class Customer_Serializer(serializers.ModelSerializer):    
-    class Meta:
-        model = Customer_Profile
-        fields = ('customer_email',)
-
-class Customer_Message_Serializer(serializers.HyperlinkedModelSerializer):
-    recepient = User_Serializer()
-    customer = Customer_Serializer()
+class Customer_Message_Serializer(serializers.ModelSerializer):
 
     class Meta:
         model = Customer_Message
-        fields = ('message_subject', 'message_body', 'recepient', 'message_status', 
-        'date_sent', 'date_received', 'customer')
+        fields = '__all__'
 
-class Customer_Product_Serializer(serializers.HyperlinkedModelSerializer):
-    customer = Customer_Serializer() 
+class Contact_Person_Status_Serializer(serializers.HyperlinkedModelSerializer):    
+    class Meta:
+        model = Contact_Person_Status
+        fields = '__all__'
+
+class Contact_Person_Serializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Contact_Person
+        fields = '__all__'
+
+class Customer_Profile_Serializer(serializers.HyperlinkedModelSerializer):
+    customer_products = Customer_Product_Serializer(many=True, read_only=True)
+    customer_messages = Customer_Message_Serializer(many=True, read_only=True)
+    customer_contact_persons = Contact_Person_Serializer(many=True, read_only=True) 
 
     class Meta:
-        model = Customer_Product
-        fields = ('product_name', 'product_type', 'product_description', 'created_on', 'customer')
+        model = Customer_Profile
+        fields = '__all__'
 
-class Product_Serializer(serializers.HyperlinkedModelSerializer):
+class User_Serializer(serializers.ModelSerializer):  
+    message_recipient =  Customer_Message_Serializer(many=True, read_only=True)
     class Meta:
-        model = Customer_Product
-        fields = ('product_name',)
-
-class Product_Requirements_Serializer(serializers.HyperlinkedModelSerializer):
-    product = Product_Serializer()
-
-    class Meta:
-        model = Product_Requirements
-        fields = ('product', 'requirement_description', 'recommended_test', 'created_on')
+        model = User
+        fields = '__all__'

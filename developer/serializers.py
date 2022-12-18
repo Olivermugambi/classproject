@@ -1,120 +1,89 @@
 # The serializer class prepares the json for the responses based on the developer model
 from rest_framework import serializers
-
 from .models import *
+from scrummaster.serializers import *
+from resources.serializers import Resource_Manager_Serializer
+from serviceintegrator.serializers import *
 
 # the serializers for the developer and sprint models
-class User_Serializer(serializers.ModelSerializer):    
-    class Meta:
-        model = User
-        fields = ('email',)
-
-class Developer_Serializer(serializers.HyperlinkedModelSerializer):
-    user_details = User_Serializer()
-
-    class Meta:
-        model = Developer
-        fields = ('developer_name', 'telephone', 'email', 'role', 'developer_status', 'user_details', 
-        'registration_date')
-
-    def create(self, validated_data):
-        user, created = User.objects.get_or_create(email=validated_data.pop('user_details'))
-        instance = Developer.objects.create(**validated_data, user_details=user)
-        return instance
-
-class Developer_Name_Serializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Developer
-        fields = ('developer_name', )
-
-class Sprint_Serializer(serializers.HyperlinkedModelSerializer):
-    added_by = Developer_Name_Serializer()
-
-    class Meta:
-        model = Sprint()
-        fields = ('start_date', 'end_date', 'expected_outcome', 'added_by')
-    
-    def create(self, validated_data):
-        added_by, created = Developer.objects.get_or_create(developer_name=validated_data.pop('added_by'))
-        instance = Sprint.objects.create(**validated_data, added_by=added_by)
-        return instance
-
-class Sprint_Field_Serializer(serializers.HyperlinkedModelSerializer):
-    
-    class Meta:
-        model = Sprint()
-        fields = ( 'expected_outcome', )
-
-class Sprint_Backlog_Serializer(serializers.HyperlinkedModelSerializer):
-    sprint = Sprint_Field_Serializer()
-    added_by = Developer_Name_Serializer()
-
-    class Meta:
-        model = Sprint_Backlog
-        fields = ('sprint', 'backlog_item', 'added_by', 'creation_date', 'expected_outcome')
-
-    def create(self, validated_data):
-        sprint, created = Sprint.objects.get_or_create(expected_outcome=validated_data.pop('sprint'))
-        added_by, created = Developer.objects.get_or_create(developer_name=validated_data.pop('added_by'))
-        instance = Sprint_Backlog.objects.create(**validated_data, added_by=added_by, sprint=sprint)
-        return instance
-
-class Sprint_Backlog_Field_Serializer(serializers.HyperlinkedModelSerializer):
-    
-    class Meta:
-        model = Sprint_Backlog()
-        fields = ( 'backlog_item', )
-
-class Sprint_Backlog_Allocations_Serializer(serializers.HyperlinkedModelSerializer):
-    sprint_backlog = Sprint_Backlog_Field_Serializer()
-    developer = Developer_Name_Serializer()
-
-    class Meta:
-        model = Sprint_Backlog_Allocations
-        fields = ('sprint_backlog', 'developer', 'creation_date', 'allocation_status')
-
-    def create(self, validated_data):
-        sprint_backlog, created = Sprint_Backlog.objects.get_or_create(backlog_item=validated_data.pop('sprint_backlog'))
-        developer, created = Developer.objects.get_or_create(developer_name=validated_data.pop('developer'))
-        instance = Sprint_Backlog_Allocations.objects.create(**validated_data, developer=developer, sprint_backlog=sprint_backlog)
-        return instance
-
-class Daily_Scrum_Serializer(serializers.HyperlinkedModelSerializer):
-    sprint_backlog = Sprint_Backlog_Field_Serializer()
-
-    class Meta:
-        model = Daily_Scrum
-        fields = ('date', 'sprint_backlog', 'outcome')
-
-    def create(self, validated_data):
-        sprint_backlog, created = Sprint_Backlog.objects.get_or_create(backlog_item=validated_data.pop('sprint_backlog'))
-        instance = Daily_Scrum.objects.create(**validated_data, sprint_backlog=sprint_backlog)
-        return instance
-
 class Sprint_Review_Serializer(serializers.HyperlinkedModelSerializer):
-    sprint = Sprint_Field_Serializer()
-    developer = Developer_Name_Serializer()
     
     class Meta:
         model = Sprint_Review
-        fields = ('sprint', 'review', 'developer', 'creation_date', 'review_status')
-
-    def create(self, validated_data):
-        sprint, created = Sprint.objects.get_or_create(expected_outcome=validated_data.pop('sprint'))
-        developer, created = Developer.objects.get_or_create(developer_name=validated_data.pop('developer'))
-        instance = Sprint_Review.objects.create(**validated_data, sprint=sprint, developer=developer)
-        return instance
+        fields = '__all__'
 
 class Sprint_Retrospective_Serializer(serializers.HyperlinkedModelSerializer):
-    sprint = Sprint_Field_Serializer()
-    added_by = Developer_Name_Serializer()
     
     class Meta:
         model = Sprint_Retrospective
-        fields = ('sprint', 'added_by', 'retrospective', 'creation_date')
+        fields = '__all__'
 
-    def create(self, validated_data):
-        sprint, created = Sprint.objects.get_or_create(expected_outcome=validated_data.pop('sprint'))
-        added_by, created = Developer.objects.get_or_create(developer_name=validated_data.pop('added_by'))
-        instance = Sprint_Review.objects.create(**validated_data, sprint=sprint, added_by=added_by)
-        return instance
+class Daily_Scrum_Serializer(serializers.HyperlinkedModelSerializer):
+    
+    class Meta:
+        model = Daily_Scrum
+        fields = '__all__'
+
+class Sprint_Backlog_Allocations_Serializer(serializers.HyperlinkedModelSerializer):
+    
+    class Meta:
+        model = Sprint_Backlog_Allocations
+        fields = '__all__'
+
+class Sprint_Backlog_Serializer(serializers.HyperlinkedModelSerializer):
+    sprint_backlog_allocations = Sprint_Backlog_Allocations_Serializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Sprint_Backlog
+        fields = '__all__'
+
+class Sprint_Serializer(serializers.HyperlinkedModelSerializer):
+    sprint_backlogs = Sprint_Backlog_Serializer(many=True, read_only=True)
+    sprint_daily_scrums = Daily_Scrum_Serializer(many=True, read_only=True)
+    sprint_reviews = Sprint_Review_Serializer(many=True, read_only=True)
+    sprint_retrospectives = Sprint_Retrospective_Serializer(many=True, read_only=True)
+
+    class Meta:
+        model = Sprint
+        fields = '__all__'
+
+class Developer_Serializer(serializers.ModelSerializer):
+    developer_sprints = Sprint_Serializer(many=True, read_only=True)
+    developer_sprint_backlogs = Sprint_Backlog_Serializer(many=True, read_only=True)
+    developer_sprint_backlog_allocations = Sprint_Backlog_Allocations_Serializer(many=True, read_only=True)
+    developer_daily_scrums = Daily_Scrum_Serializer(many=True, read_only=True)
+    developer_sprint_reviews = Sprint_Review_Serializer(many=True, read_only=True)
+    developer_sprint_retrospectives = Sprint_Retrospective_Serializer(many=True, read_only=True)
+    developer_dev_rule_feedbacks = Development_Rule_Feedback_Serializer(many=True, read_only=True) 
+    developer_dev_rules = Development_Rule_Serializer(many=True, read_only=True) 
+    developer_team_memberships = Team_Member_Serializer(many=True, read_only=True)
+    developer_resource_management = Resource_Manager_Serializer(many=True, read_only=True)
+    developer_integration_recommended_adaptations = Recommended_Adaptations_Serializer(many=True, read_only=True)
+    developer_integration_outcomes = Integration_Outcome_Serializer(many=True, read_only=True)
+    allocated_integration_tools = Integration_Tool_Allocation_Serializer(many=True, read_only=True)
+    developer_integration_tools = Service_Integration_Tool_Serializer(many=True, read_only=True)
+
+    class Meta:
+        model = Developer
+        fields = '__all__'
+ 
+class Feedback_Serializer(serializers.HyperlinkedModelSerializer):
+    
+    class Meta:
+        model = Feedback
+        fields = '__all__'
+
+class Project_Serializer(serializers.HyperlinkedModelSerializer):
+    project_product_releases = Product_Release_Serializer(many=True, read_only=True)
+    project_plans = Project_Plan_Serializer(many=True, read_only=True)
+    project_managers = Project_Manager_Serializer(many=True, read_only=True)
+
+    class Meta:
+        model = Project
+        fields = '__all__'
+
+class Project_Phase_Serializer(serializers.ModelSerializer):   
+    project_phase_projects = Project_Serializer(many=True, read_only=True) 
+    class Meta:
+        model = Project_Phase
+        fields = '__all__'

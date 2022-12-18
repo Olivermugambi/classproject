@@ -2,12 +2,7 @@ from django.contrib import admin
 from .models import *
 
 # Register your models here.
-admin.site.register(Contact_Person_Status)
-admin.site.register(Contact_Person)
-admin.site.register(Project_Phase)
 admin.site.register(Project_Manager)
-admin.site.register(Project)
-admin.site.register(Feedback)
 admin.site.register(Priority)
 admin.site.register(Plan_Status)
 admin.site.register(Project_Plan)
