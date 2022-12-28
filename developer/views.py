@@ -11,14 +11,6 @@ class Sprint_ViewSet(viewsets.ModelViewSet):
     queryset = Sprint.objects.all().order_by('expected_outcome')
     serializer_class = Sprint_Serializer
 
-    def perform_create(self, serializer):
-        self.request.data.get("title", None)  # read data from request
-        if self.request.user.is_authenticated:
-            serializer.save(user_details=self.request.user)
-        else:
-            serializer.save()   
-
-
 #    def get_queryset(self):
 #        id = self.request.GET.get('id')
 #        developer, created = Developer.objects.get_or_create(id=id)
